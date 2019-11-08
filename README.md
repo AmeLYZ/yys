@@ -1,4 +1,6 @@
 # yys
+- based on python 3.X
+
 test for mouse contral used for yys
 I'm trying to use a Library to contral the mouse
 Goal:
