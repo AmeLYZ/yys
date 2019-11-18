@@ -1,19 +1,14 @@
-
 import time
 import random
 
 import pyautogui
 import win32gui
 import win32con
+import win32com.client
 
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageGrab
-
-# def safe zone
-
-
-
 
 
 # return the loction of YYS windows
@@ -24,8 +19,10 @@ def FindYYSWindows():
     hwnd = win32gui.FindWindow(classname, titlename)
     left, top, right, bottom = win32gui.GetWindowRect(hwnd)
     
-    # set the windows foreground
-    # win32gui.SetForegroundWindow(hwnd)
+    # if delete the first two lines, there will be a bug with the func win32gui.SetForegroundWindow()
+    shell = win32com.client.Dispatch("WScript.Shell")
+    shell.SendKeys('%')
+    win32gui.SetForegroundWindow(hwnd)
 
     return (left, top, right, bottom)
     
@@ -90,9 +87,9 @@ class OnmyojiPassenger(object):
         # click time >= 2
         
         safe_click_time = random.randint(click_time-1, click_time+1)
-        safe_click_frec = random.randint(120, 180)/1000
+        safe_click_frec = random.randint(150, 180)/1000
         
-        for i in range(click_time):
+        for i in range(safe_click_time):
             safe_point = (random.randint(safe_zone[0], safe_zone[2])+self.windows_location[0], 
                           random.randint(safe_zone[1], safe_zone[3])+self.windows_location[1])
             pyautogui.moveTo(safe_point)
@@ -100,9 +97,10 @@ class OnmyojiPassenger(object):
             time.sleep(safe_click_frec)
 
         
-    def mitama(self):
-        timer = 1
-        while 1:  
+    def mitama(self, need_number=3):
+        counter = 0
+        while counter < need_number:  
+            # invite button
             safe_zone = (0, 0, 0, 0)        
             while(safe_zone == (0, 0, 0, 0)):
                 time.sleep(0.2)
@@ -111,29 +109,27 @@ class OnmyojiPassenger(object):
                             
             auto_zone = onmyoji.find_piece(img, 'image\\invite2.png')
             
-            # if: not auto prepare
-            if auto_zone == (0, 0, 0, 0):
-                # print('find safe zone')
+            # if: not auto prepared
+            if auto_zone != (0, 0, 0, 0):
+                self.safe_click(auto_zone)
+                    
+            # else: auto prepared                
+            else:
                 self.safe_click(safe_zone)   
                 
                 safe_zone = (0, 0, 0, 0)
                 while(safe_zone == (0, 0, 0, 0)):
                     time.sleep(0.2)
                     img = self.screenshot()
-                    safe_zone = onmyoji.find_piece(img, 'image\\finish1.png')  
-            # else: auto prepare                    
-            else:
-                self.safe_click(auto_zone)
-              
-  
+                    safe_zone = onmyoji.find_piece(img, 'image\\prepare.png')    
             
+            # finish one task
             safe_zone = (0, 0, 0, 0)
             while(safe_zone == (0, 0, 0, 0)):
                 time.sleep(0.2)
                 img = self.screenshot()
                 safe_zone = onmyoji.find_piece(img, 'image\\finish1.png')
             
-            # print('find safe zone')
             self.safe_click(safe_zone)   
           
             safe_zone = (0, 0, 0, 0)
@@ -142,10 +138,12 @@ class OnmyojiPassenger(object):
                 img = self.screenshot()
                 safe_zone = onmyoji.find_piece(img, 'image\\finish2.png')
             
-            # print('find safe zone')
-            self.safe_click(safe_zone)  
-            print("完成{}次任务".format(timer))
-            timer += 1
+            self.safe_click(safe_zone)
+
+            # task counter            
+            counter += 1
+            print("完成{}次任务, 还差{}次任务".format(counter, need_number-counter))
+            
 
 
 if __name__ == "__main__":
