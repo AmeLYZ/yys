@@ -49,10 +49,12 @@ class OnmyojiPassenger(object):
 
     def screenshot(self):
         img = ImageGrab.grab(self.windows_location)
-        img.save('test.png', 'png')
+        
+        # img.save('test.png', 'png')
         # img.save('{}.png'.format(time.time()), 'png')
+        
         return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
-        # return cv2.imread("test.png")
+
 
 
     def find_piece(self, img, template):
@@ -64,10 +66,15 @@ class OnmyojiPassenger(object):
         
         # max_val shows the best score, while max_loc shows the index of it 
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-        #  print(min_val, max_val, min_loc, max_loc)
+        print(max_val, max_loc)
         
-        if max_val >= 0.99:
+        
+        if random.random() > 0.7:
+            pyautogui.moveTo(max_loc[0]+self.windows_location[0], max_loc[1]+self.windows_location[1])
+        
+        if max_val >= 0.999:
             safe_zone = (max_loc[0], max_loc[1], max_loc[0]+w, max_loc[1]+h)
+            
         else:
             safe_zone = (0, 0, 0, 0)
         
@@ -84,9 +91,8 @@ class OnmyojiPassenger(object):
 
     def safe_click(self, safe_zone, click_time=2):
         # random click n times in safe zone
-        # click time >= 2
         
-        safe_click_time = random.randint(click_time-1, click_time+1)
+        safe_click_time = random.randint(click_time, click_time+1)
         safe_click_frec = random.randint(150, 180)/1000
         
         for i in range(safe_click_time):
@@ -96,37 +102,62 @@ class OnmyojiPassenger(object):
             pyautogui.click()
             time.sleep(safe_click_frec)
 
+
         
-    def mitama(self, need_number=3):
+    def mitama(self, need_number=5):
         counter = 0
-        while counter < need_number:  
+        for counter in range(1, need_number+1):
             # invite button
             safe_zone = (0, 0, 0, 0)        
             while(safe_zone == (0, 0, 0, 0)):
-                time.sleep(0.2)
+                time.sleep(0.1)
                 img = self.screenshot()
                 safe_zone = onmyoji.find_piece(img, 'image\\invite1.png')
                             
             auto_zone = onmyoji.find_piece(img, 'image\\invite2.png')
             
-            # if: not auto prepared
+            # auto prepared
             if auto_zone != (0, 0, 0, 0):
                 self.safe_click(auto_zone)
                     
-            # else: auto prepared                
+            # not auto prepared                
             else:
                 self.safe_click(safe_zone)   
-                
-                safe_zone = (0, 0, 0, 0)
-                while(safe_zone == (0, 0, 0, 0)):
-                    time.sleep(0.2)
+
+                # 0: unlocked  1: not find  2: locked
+                lock_state = 1
+
+                while(lock_state == 1):
+                    time.sleep(0.1)
                     img = self.screenshot()
-                    safe_zone = onmyoji.find_piece(img, 'image\\prepare.png')    
-            
+                    
+                    # find the lock state                    
+                    state0 = 0 if onmyoji.find_piece(img, 'image\\locked0.png') != (0, 0, 0, 0) else 1
+                    state1 = 1 if onmyoji.find_piece(img, 'image\\locked1.png') != (0, 0, 0, 0) else 0                   
+                    lock_state = state0 + state1
+                    # print('state0 & state1: {} & {}'.format(state0, state1))
+                    print('lock state:{}'.format(lock_state))
+
+                # unlocked, need to press the prepare-button
+                if lock_state == 0:
+                    safe_zone = (0, 0, 0, 0)
+                    
+                    while(safe_zone == (0, 0, 0, 0)):
+                        time.sleep(0.1)
+                        img = self.screenshot()
+                        safe_zone = onmyoji.find_piece(img, 'image\\prepare.png')    
+                    
+                    # self.safe_click(safe_zone)
+                    
+                # locked, no need to press the prepare -button
+                else:
+                    pass
+
+
             # finish one task
             safe_zone = (0, 0, 0, 0)
             while(safe_zone == (0, 0, 0, 0)):
-                time.sleep(0.2)
+                time.sleep(0.1)
                 img = self.screenshot()
                 safe_zone = onmyoji.find_piece(img, 'image\\finish1.png')
             
@@ -134,14 +165,15 @@ class OnmyojiPassenger(object):
           
             safe_zone = (0, 0, 0, 0)
             while(safe_zone == (0, 0, 0, 0)):
-                time.sleep(0.2)
+                time.sleep(0.1)
                 img = self.screenshot()
                 safe_zone = onmyoji.find_piece(img, 'image\\finish2.png')
+
+            # delay needed
             
             self.safe_click(safe_zone)
-
+            time.sleep(2)
             # task counter            
-            counter += 1
             print("完成{}次任务, 还差{}次任务".format(counter, need_number-counter))
             
 

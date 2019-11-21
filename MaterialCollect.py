@@ -36,6 +36,6 @@ if __name__ == "__main__":
     loc = FindYYSWindows()   
     
     while 1:
-        time.sleep(0.2)
+        time.sleep(0.1)
         filename = screenshot(loc)
         print("file {} save successfully".format(filename))
